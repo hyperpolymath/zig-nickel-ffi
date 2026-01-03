@@ -1,0 +1,8 @@
+# Zig build
+zig-out/
+zig-cache/
+.zig-cache/
+
+# Rust build
+shim/target/
+shim/Cargo.lock

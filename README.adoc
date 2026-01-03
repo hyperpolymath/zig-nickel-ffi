@@ -1,9 +1,129 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 = zig-nickel-ffi
+:toc:
 
-Direct Zig FFI bindings for the Nickel configuration language.
+Zig FFI bindings for the https://nickel-lang.org/[Nickel] configuration language.
 
-Unlike bunsenite (which embeds Nickel in a larger system), this provides standalone FFI access to Nickel's evaluation engine.
+== Overview
+
+Direct access to Nickel's evaluation engine from Zig, via a Rust shim that wraps `nickel-lang-core`.
+
+Unlike bunsenite (which embeds Nickel in a larger system), this provides standalone FFI access for any project that needs Nickel evaluation.
+
+== Features
+
+* Evaluate Nickel source code and get JSON results
+* Type-check Nickel configurations
+* C FFI exports for use from Rust, Deno, ReScript, etc.
+
+== Requirements
+
+* Zig 0.15+
+* Rust (for building the shim)
+* nickel-lang-core 0.10+
+
+== Building
+
+[source,bash]
+----
+# Build the Rust shim first
+cd shim && cargo build --release && cd ..
+
+# Build the Zig library
+zig build
+
+# Or build both with:
+zig build shim && zig build
+----
+
+== Usage
+
+=== Zig
+
+[source,zig]
+----
+const nickel = @import("zig-nickel-ffi");
+
+var ctx = try nickel.Context.init(allocator);
+defer ctx.deinit();
+
+// Evaluate Nickel source
+const result = try ctx.eval(allocator, "{ x = 1 + 2, y = \"hello\" }");
+defer allocator.free(result);
+// result: { x = 3, y = "hello" }
+
+// Type-check
+const valid = try ctx.typecheck(allocator, "{ x : Number = 42 }");
+----
+
+=== C FFI
+
+[source,c]
+----
+#include "nickel_ffi.h"
+
+NickelContext* ctx = nickel_context_new();
+
+char* result = nickel_eval(ctx, "1 + 2");
+if (result) {
+    printf("Result: %s\n", result);  // "3"
+    nickel_string_free(result);
+}
+
+int valid = nickel_typecheck(ctx, "{ x = 1 }");
+
+nickel_context_free(ctx);
+----
+
+== Architecture
+
+----
+┌─────────────────────────────────────┐
+│         Your Application            │
+│      (Zig / Rust / Deno / etc)      │
+└─────────────────┬───────────────────┘
+                  │
+┌─────────────────▼───────────────────┐
+│       zig-nickel-ffi (Zig)          │
+│   High-level Zig API + C exports    │
+└─────────────────┬───────────────────┘
+                  │
+┌─────────────────▼───────────────────┐
+│     nickel-ffi-shim (Rust)          │
+│   C-compatible wrapper for Nickel   │
+└─────────────────┬───────────────────┘
+                  │
+┌─────────────────▼───────────────────┐
+│        nickel-lang-core             │
+│       (Nickel's Rust core)          │
+└─────────────────────────────────────┘
+----
+
+== API Reference
+
+=== Context
+
+|===
+| Function | Description
+
+| `Context.init(allocator)` | Create new evaluation context
+| `Context.deinit()` | Free context
+| `Context.eval(allocator, source)` | Evaluate Nickel source, return result string
+| `Context.typecheck(allocator, source)` | Type-check source, return validity
+|===
+
+=== C FFI Functions
+
+|===
+| Function | Description
+
+| `nickel_context_new()` | Create context
+| `nickel_context_free(ctx)` | Free context
+| `nickel_eval(ctx, source)` | Evaluate, return string (caller frees)
+| `nickel_typecheck(ctx, source)` | Type-check, return 1 if valid
+| `nickel_string_free(str)` | Free string from `nickel_eval`
+| `nickel_version()` | Get Nickel version
+|===
 
 == License
 
