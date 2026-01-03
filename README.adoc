@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+= zig-nickel-ffi
+
+Direct Zig FFI bindings for the Nickel configuration language.
+
+Unlike bunsenite (which embeds Nickel in a larger system), this provides standalone FFI access to Nickel's evaluation engine.
+
+== License
+
+AGPL-3.0-or-later
