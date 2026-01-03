@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Build configuration for zig-nickel-ffi (Zig 0.15+)
 //!
-//! This requires the Rust shim to be built first:
+//! No C code - just Zig + Rust via C ABI calling convention.
+//!
+//! Build the Rust shim first:
 //!   cd shim && cargo build --release
 
 const std = @import("std");
@@ -18,10 +20,7 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
 
-    // Add include path for C header
-    root_module.addIncludePath(b.path("include"));
-
-    // Link to Rust shim
+    // Link to Rust shim (no C header needed - Zig declares externs directly)
     root_module.addLibraryPath(b.path("shim/target/release"));
     root_module.linkSystemLibrary("nickel_ffi_shim", .{});
 
@@ -40,7 +39,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .link_libc = true,
     });
-    shared_module.addIncludePath(b.path("include"));
     shared_module.addLibraryPath(b.path("shim/target/release"));
     shared_module.linkSystemLibrary("nickel_ffi_shim", .{});
 
@@ -58,7 +56,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .link_libc = true,
     });
-    test_module.addIncludePath(b.path("include"));
     test_module.addLibraryPath(b.path("shim/target/release"));
     test_module.linkSystemLibrary("nickel_ffi_shim", .{});
 
